@@ -18,6 +18,7 @@ void startWork(int argc, const char * argv[]);
 void moveMediaFiles(NSString *srcDirectory, NSString *dstDirectory);
 void moveFileWhichHasPrefix(NSString * prefix, NSString * srcDirectory, NSString * dstDirectory);
 void adjustFileDate(NSString *srcDirectory);
+void adjustFileExtension(NSString *srcDirectory, NSString * dstDirectory);
 
 void processDirectory(NSString *srcDirectory, NSString *dstDirectory);
 
@@ -87,6 +88,20 @@ void startWork(int argc, const char * argv[])
         NSString * srcDirectory = [NSString stringWithCString:argv[2] encoding:NSUTF8StringEncoding];
         
         adjustFileDate(srcDirectory);
+        
+        return ;
+    }
+    else if ([command isEqualToString:@"adjustFileExtension"]) {
+        if (argc != 4) {
+            logCommandLineArguments(argc, argv);
+            NSLog(@"PhotoArranger adjustFileExtension [src_dir] [dst_dir]");
+            exit(1);
+        }
+        
+        NSString * srcDirectory = [NSString stringWithCString:argv[2] encoding:NSUTF8StringEncoding];
+        NSString * dstDirectory = [NSString stringWithCString:argv[3] encoding:NSUTF8StringEncoding];
+
+        adjustFileExtension(srcDirectory, dstDirectory);
         
         return ;
     }
@@ -541,6 +556,71 @@ void adjustFileDate(NSString *srcDirectory)
             }
             
             renameMovieFileNameToDate(fileURL);
+        }
+    }
+}
+
+void adjustFileExtension(NSString *srcDirectory, NSString * dstDirectory)
+{
+    NSURL *srcDirectoryURL = [NSURL fileURLWithPath:srcDirectory];
+    NSURL *dstDirectoryURL = [NSURL fileURLWithPath:dstDirectory];
+    
+    NSFileManager * fileManager = [NSFileManager defaultManager];
+    
+    NSDirectoryEnumerator *enumerator = directoryEnumerator(srcDirectoryURL);
+    
+    for (NSURL *fileURL in enumerator) {
+        
+        @autoreleasepool {
+            
+            if ([fileURL isDirectoryFileURL]) {
+//                NSLog(@".");
+                continue ;
+            }
+            
+            NSString * fileName = [fileURL lastPathComponent];
+            NSString * fileExt = [fileName pathExtension];
+            
+            if ([fileExt length] > 0) {
+//                NSLog(@".");
+                continue ;
+            }
+            
+            if ([fileName hasSuffix:@"."]) {
+                fileName = [fileName substringToIndex:[fileName length]-1];
+            }
+
+            fileExt = [[fileName substringFromIndex:[fileName length]-3] uppercaseString];
+
+            if (![@[@"JPG", @"PNG", @"GIF"] containsObject:fileExt]) {
+                NSLog(@"strange file %@", fileURL);
+
+                NSURL * dstFileURL = [dstDirectoryURL URLByAppendingPathComponent:[fileURL lastPathComponent]];
+                
+                NSLog(@"%@\n -> %@", fileURL, dstFileURL);
+                
+                NSError * error = nil;
+                if (![fileManager moveItemAtURL:fileURL toURL:dstFileURL error:&error]) {
+                    NSLog(@"failed to move , %@", error);
+                    exit(1);
+                }
+
+                continue;
+            }
+            
+            fileName = [fileName substringToIndex:[fileName length]-3];
+            
+            NSString * newFileName = [NSString stringWithFormat:@"%@.%@", fileName, fileExt];
+            
+            NSURL * dstFileURL = [[fileURL URLByDeletingLastPathComponent] URLByAppendingPathComponent:newFileName];
+            
+            NSLog(@"%@\n -> %@", fileURL, dstFileURL);
+            
+            NSError * error = nil;
+            if (![fileManager moveItemAtURL:fileURL toURL:dstFileURL error:&error]) {
+                NSLog(@"failed to move , %@", error);
+                exit(1);
+            }
         }
     }
 }
