@@ -8,7 +8,14 @@
 
 #import <Foundation/Foundation.h>
 #import "NSImage+Exif.h"
+#import "Util.h"
+#import "NSURL+Extension.h"
+#import "NSString+Extension.h"
 
+
+void startWork(int argc, const char * argv[]);
+
+void moveFileWhichHasPrefix(NSString * prefix, NSString * srcDirectory, NSString * dstDirectory);
 
 unsigned long long fileSizeFromFileURL(NSURL * fileURL);
 
@@ -18,38 +25,65 @@ void processDuplicatedFiles(NSString *directory);
 void removeFaceTile(NSString *directory);
 void removeTooSmallImages(NSString *directory);
 void arrangeFileExtension(NSString *directory);
+void logCommandLineArguments(int argc, const char * argv[]);
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
-#if 0
-        if (argc != 3) {
-            NSLog(@"PhotoArranger [src_dir] [dst_dir]");
-            return 0;
-        }
-
-        NSString *srcDirectory = [NSString stringWithCString:argv[1] encoding:NSUTF8StringEncoding];
-        NSString *dstDirectory = [NSString stringWithCString:argv[2] encoding:NSUTF8StringEncoding];
-
-        NSLog(@"src dir : %@", srcDirectory);
-        NSLog(@"dst dir : %@", dstDirectory);
-
-        processDirectory(srcDirectory, dstDirectory);
-#endif
-
-#if 1
-//        if (argc != 2) {
-//            NSLog(@"PhotoArranger [target_dir]");
-//            return 0;
-//        }
-        NSString *directory = [NSString stringWithCString:argv[1] encoding:NSUTF8StringEncoding];
-        NSLog(@"directory : %@", directory);
-
-//        arrangeFileExtension(directory);
-//        removeTooSmallImages(directory);
-        processDuplicatedFiles(directory);
-#endif
+        startWork(argc, argv);
     }
     return 0;
+}
+
+void startWork(int argc, const char * argv[])
+{
+#if 1
+    if (argc < 3) {
+        logCommandLineArguments(argc, argv);
+        NSLog(@"PhotoArranger [command] [src_dir] [dst_dir] [option]");
+//        NSLog(@"PhotoArranger [src_dir] [dst_dir]");
+        exit(1);
+    }
+    
+    NSString * command = [NSString stringWithCString:argv[1] encoding:NSUTF8StringEncoding];
+    
+    if ([command isEqualToString:@"moveFileIfPrefix"]) {
+        
+        if (argc != 5) {
+            logCommandLineArguments(argc, argv);
+            NSLog(@"PhotoArranger moveFileIfPrefix [src_dir] [dst_dir] [prefix]");
+            exit(1);
+        }
+
+        NSString * srcDirectory = [NSString stringWithCString:argv[2] encoding:NSUTF8StringEncoding];
+        NSString * dstDirectory = [NSString stringWithCString:argv[3] encoding:NSUTF8StringEncoding];
+        NSString * prefix = [NSString stringWithCString:argv[4] encoding:NSUTF8StringEncoding];
+        
+        moveFileWhichHasPrefix(prefix, srcDirectory, dstDirectory);
+        
+        return ;
+    }
+    
+//    NSString *srcDirectory = [NSString stringWithCString:argv[1] encoding:NSUTF8StringEncoding];
+//    NSString *dstDirectory = [NSString stringWithCString:argv[2] encoding:NSUTF8StringEncoding];
+//    
+//    NSLog(@"src dir : %@", srcDirectory);
+//    NSLog(@"dst dir : %@", dstDirectory);
+//    
+//    processDirectory(srcDirectory, dstDirectory);
+#endif
+    
+#if 0
+    //        if (argc != 2) {
+    //            NSLog(@"PhotoArranger [target_dir]");
+    //            return 0;
+    //        }
+    NSString *directory = [NSString stringWithCString:argv[1] encoding:NSUTF8StringEncoding];
+    NSLog(@"directory : %@", directory);
+    
+    //        arrangeFileExtension(directory);
+    //        removeTooSmallImages(directory);
+    processDuplicatedFiles(directory);
+#endif
 }
 
 void arrangeFileExtension(NSString *directory)
@@ -276,33 +310,24 @@ void processDirectory(NSString *srcDirectory, NSString *dstDirectory)
 
     NSFileManager *localFileManager= [[NSFileManager alloc] init];
 
-    NSDirectoryEnumerator *directoryEnumerator =
-    [localFileManager enumeratorAtURL:srcDirectoryURL
-           includingPropertiesForKeys:@[NSURLNameKey, NSURLIsDirectoryKey]
-                              options:NSDirectoryEnumerationSkipsHiddenFiles
-                         errorHandler:^BOOL(NSURL * _Nonnull url, NSError * _Nonnull error) {
-                             NSLog(@"error! %@ %@", url, error);
-                             return NO;
-                         }];
+    NSDirectoryEnumerator *enumerator = directoryEnumerator(srcDirectoryURL);
 
 //    NSMutableArray<NSURL *> *mutableFileURLs = [NSMutableArray array];
-    for (NSURL *fileURL in directoryEnumerator) {
+    for (NSURL *fileURL in enumerator) {
         @autoreleasepool {
 
-            NSNumber *isDirectory = nil;
-            [fileURL getResourceValue:&isDirectory forKey:NSURLIsDirectoryKey error:nil];
-            if ([isDirectory boolValue] == YES) {
-                continue;
+            if ([fileURL isDirectoryFileURL]) {
+                continue ;
             }
 
-            NSLog(@"%@", [[fileURL absoluteString] stringByReplacingOccurrencesOfString:[srcDirectoryURL absoluteString]
-                                                                             withString:@""]);
+            NSString * fileName = [fileURL lastPathComponent];
+            NSLog(@"%@", fileName);
 
             NSError *error = nil;
 
             NSString * dateString = nil;
 
-            dateString = [NSImage dateForImageURL:fileURL];
+            dateString = [NSImage dateFromImageURL:fileURL];
             if ([dateString length] > 0) {
                 // for image
 
@@ -353,7 +378,7 @@ void processDirectory(NSString *srcDirectory, NSString *dstDirectory)
 
             NSLog(@"dst dir : %@", dstDir);
 
-            NSString *dstFile = [dstDir stringByAppendingPathComponent:[fileURL lastPathComponent]];
+            NSString *dstFile = [dstDir stringByAppendingPathComponent:fileName];
 
             NSLog(@"dst file : %@", dstFile);
 
@@ -361,17 +386,7 @@ void processDirectory(NSString *srcDirectory, NSString *dstDirectory)
 
                 NSLog(@"exist!");
 
-                NSArray<NSString*> *fileComponents = [[fileURL lastPathComponent] componentsSeparatedByString:@"."];
-
-                NSMutableString *fileNewName = [NSMutableString string];
-                [fileNewName appendString:[fileComponents firstObject]];
-                [fileNewName appendString:@"_"];
-                [fileNewName appendString:[[NSUUID UUID] UUIDString]];
-
-                if ([fileComponents firstObject] != [fileComponents lastObject]) {
-                    [fileNewName appendString:@"."];
-                    [fileNewName appendString:[fileComponents lastObject]];
-                }
+                NSString *fileNewName = [fileName stringByInsertingPostfixInFileName:[[NSUUID UUID] UUIDString]];
 
                 dstFile = [dstDir stringByAppendingPathComponent:fileNewName];
 
@@ -402,3 +417,170 @@ void processDirectory(NSString *srcDirectory, NSString *dstDirectory)
         }
     }
 }
+
+void moveMediaFiles(NSString *srcDirectory, NSString *dstDirectory)
+{
+    NSURL *srcDirectoryURL = [NSURL fileURLWithPath:srcDirectory];
+    
+    NSFileManager *localFileManager= [[NSFileManager alloc] init];
+    
+    NSDirectoryEnumerator *enumerator = directoryEnumerator(srcDirectoryURL);
+    
+    for (NSURL *fileURL in enumerator) {
+        
+        @autoreleasepool {
+            
+            if ([fileURL isDirectoryFileURL]) {
+                continue ;
+            }
+            
+            NSString * fileName = [fileURL lastPathComponent];
+            NSLog(@"%@", fileName);
+            
+            NSError *error = nil;
+            
+            NSString * dateString = nil;
+            
+            dateString = [NSImage dateFromImageURL:fileURL];
+            if ([dateString length] > 0) {
+                // for image
+                
+                NSLog(@"image! %@", dateString);
+            }
+            else {
+                
+                // for video
+                NSString * pathExtension = [[fileURL pathExtension] uppercaseString];
+                
+                if (![@[@"MP4", @"MOV", @"AVI", @"MPG"] containsObject:pathExtension]) {
+                    continue;
+                }
+
+                dateString = dateFromFileURL(fileURL);
+            }
+            
+            NSString *yearString = [dateString substringToIndex:4];
+            
+            NSString *dstDir = [[dstDirectory stringByAppendingPathComponent:yearString] stringByAppendingPathComponent:dateString];
+            [localFileManager createDirectoryAtPath:dstDir withIntermediateDirectories:YES attributes:nil error:nil];
+            
+            NSLog(@"dst dir : %@", dstDir);
+            
+            NSString *dstFile = [dstDir stringByAppendingPathComponent:fileName];
+            
+            NSLog(@"dst file : %@", dstFile);
+            
+            if ([localFileManager fileExistsAtPath:dstFile]) {
+                
+                NSLog(@"exist!");
+                
+                NSString *fileNewName = [fileName stringByInsertingPostfixInFileName:[[NSUUID UUID] UUIDString]];
+                
+                dstFile = [dstDir stringByAppendingPathComponent:fileNewName];
+                
+                NSLog(@"another dst file : %@", dstFile);
+            }
+            
+            NSURL *dstFileURL = [NSURL fileURLWithPath:dstFile];
+            
+            NSLog(@"%@\n> %@", fileURL, dstFile);
+            
+            //            NSError *error = nil;
+            if (![localFileManager moveItemAtURL:fileURL toURL:dstFileURL error:&error]) {
+                NSLog(@"failed to move , %@", error);
+                exit(1);
+            }
+            
+            
+            //        if ([isDirectory boolValue]) {
+            //            NSString *name = nil;
+            //            [fileURL getResourceValue:&name forKey:NSURLNameKey error:nil];
+            //
+            //            if ([name isEqualToString:@"_extras"]) {
+            //                [directoryEnumerator skipDescendants];
+            //            } else {
+            //                [mutableFileURLs addObject:fileURL];
+            //            }
+            //        }
+        }
+    }
+}
+
+void moveFileWhichHasPrefix(NSString * prefix, NSString * srcDirectory, NSString * dstDirectory)
+{
+    NSURL * srcDirectoryURL = [NSURL fileURLWithPath:srcDirectory];
+    
+    NSFileManager * fileManager = [NSFileManager defaultManager];
+    
+    NSDirectoryEnumerator * enumerator = directoryEnumerator(srcDirectoryURL);
+    
+    for (NSURL *fileURL in enumerator) {
+
+        @autoreleasepool {
+            
+            if ([fileURL isDirectoryFileURL]) {
+                NSLog(@".");
+                continue ;
+            }
+            
+            NSString * fileName = [fileURL lastPathComponent];
+
+            if (![fileName hasPrefix:prefix]) {
+                NSLog(@".");
+                continue ;
+            }
+
+            NSLog(@"%@", fileName);
+
+            
+            NSError *error = nil;
+            NSString * dateString = nil;
+            
+            dateString = [NSImage dateFromImageURL:fileURL];
+            if ([dateString length] > 0) {
+                // for image
+                NSLog(@"image! %@", dateString);
+            }
+            else {
+                // for video
+                NSString * pathExtension = [[fileURL pathExtension] uppercaseString];
+                if (![@[@"MP4", @"MOV", @"AVI", @"MPG"] containsObject:pathExtension]) {
+                    continue;
+                }
+                dateString = dateFromFileURL(fileURL);
+                NSLog(@"video! %@", dateString);
+            }
+            
+            NSString *yearString = [dateString substringToIndex:4];
+            
+            NSString *dstDir = [[dstDirectory stringByAppendingPathComponent:yearString] stringByAppendingPathComponent:dateString];
+            [fileManager createDirectoryAtPath:dstDir withIntermediateDirectories:YES attributes:nil error:nil];
+            
+            
+            NSString *dstFile = [dstDir stringByAppendingPathComponent:fileName];
+            
+            NSLog(@"dst file : %@", dstFile);
+            
+            if ([fileManager fileExistsAtPath:dstFile]) {
+                
+                NSLog(@"exist!");
+                
+                NSString *fileNewName = [fileName stringByInsertingPostfixInFileName:[[NSUUID UUID] UUIDString]];
+                
+                dstFile = [dstDir stringByAppendingPathComponent:fileNewName];
+                
+                NSLog(@"new dst file : %@", dstFile);
+            }
+            
+            NSURL *dstFileURL = [NSURL fileURLWithPath:dstFile];
+            
+            NSLog(@"%@\n> %@", fileURL, dstFile);
+            
+            if (![fileManager moveItemAtURL:fileURL toURL:dstFileURL error:&error]) {
+                NSLog(@"failed to move , %@", error);
+                exit(1);
+            }
+        }
+    }
+}
+

@@ -14,7 +14,7 @@
 
 + (NSData *)getAppendedDataForImageData:(NSData *)imageData exif:(ExifContainer *)container;
 
-+ (NSString *)dateForImageURL:(NSURL *)url;
++ (NSString *)dateFromImageURL:(NSURL *)url;
 
 + (BOOL)isTooSmallImageOfImageURL:(NSURL *)url;
 

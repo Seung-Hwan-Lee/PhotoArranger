@@ -10,6 +10,9 @@
 		4FD89EA81E1689B9003F5D5C /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FD89EA71E1689B9003F5D5C /* main.m */; };
 		4FD89EB71E168A07003F5D5C /* ExifContainer.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FD89EB01E168A07003F5D5C /* ExifContainer.m */; };
 		4FD89EB91E168A07003F5D5C /* NSImage+Exif.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FD89EB61E168A07003F5D5C /* NSImage+Exif.m */; };
+		A2D906981E2B35DA00A65EED /* Util.m in Sources */ = {isa = PBXBuildFile; fileRef = A2D906971E2B35DA00A65EED /* Util.m */; };
+		A2D9069B1E2B398700A65EED /* NSURL+Extension.m in Sources */ = {isa = PBXBuildFile; fileRef = A2D9069A1E2B398700A65EED /* NSURL+Extension.m */; };
+		A2D9069E1E2B3BAB00A65EED /* NSString+Extension.m in Sources */ = {isa = PBXBuildFile; fileRef = A2D9069D1E2B3BAB00A65EED /* NSString+Extension.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,6 +34,12 @@
 		4FD89EB01E168A07003F5D5C /* ExifContainer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ExifContainer.m; sourceTree = "<group>"; };
 		4FD89EB51E168A07003F5D5C /* NSImage+Exif.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSImage+Exif.h"; sourceTree = "<group>"; };
 		4FD89EB61E168A07003F5D5C /* NSImage+Exif.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSImage+Exif.m"; sourceTree = "<group>"; };
+		A2D906961E2B35DA00A65EED /* Util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Util.h; sourceTree = "<group>"; };
+		A2D906971E2B35DA00A65EED /* Util.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Util.m; sourceTree = "<group>"; };
+		A2D906991E2B398700A65EED /* NSURL+Extension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSURL+Extension.h"; sourceTree = "<group>"; };
+		A2D9069A1E2B398700A65EED /* NSURL+Extension.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSURL+Extension.m"; sourceTree = "<group>"; };
+		A2D9069C1E2B3BAB00A65EED /* NSString+Extension.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+Extension.h"; sourceTree = "<group>"; };
+		A2D9069D1E2B3BAB00A65EED /* NSString+Extension.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+Extension.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +74,12 @@
 			children = (
 				4FD89EAE1E168A07003F5D5C /* Classes */,
 				4FD89EA71E1689B9003F5D5C /* main.m */,
+				A2D906961E2B35DA00A65EED /* Util.h */,
+				A2D906971E2B35DA00A65EED /* Util.m */,
+				A2D906991E2B398700A65EED /* NSURL+Extension.h */,
+				A2D9069A1E2B398700A65EED /* NSURL+Extension.m */,
+				A2D9069C1E2B3BAB00A65EED /* NSString+Extension.h */,
+				A2D9069D1E2B3BAB00A65EED /* NSString+Extension.m */,
 			);
 			path = PhotoArranger;
 			sourceTree = "<group>";
@@ -147,8 +162,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				4FD89EB91E168A07003F5D5C /* NSImage+Exif.m in Sources */,
+				A2D9069E1E2B3BAB00A65EED /* NSString+Extension.m in Sources */,
 				4FD89EA81E1689B9003F5D5C /* main.m in Sources */,
+				A2D9069B1E2B398700A65EED /* NSURL+Extension.m in Sources */,
 				4FD89EB71E168A07003F5D5C /* ExifContainer.m in Sources */,
+				A2D906981E2B35DA00A65EED /* Util.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -277,6 +295,7 @@
 				4FD89EAD1E1689B9003F5D5C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

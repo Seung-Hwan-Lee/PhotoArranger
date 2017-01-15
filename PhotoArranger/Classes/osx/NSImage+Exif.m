@@ -44,7 +44,7 @@
     
 }
 
-+ (NSString *)dateForImageURL:(NSURL *)url
++ (NSString *)dateFromImageURL:(NSURL *)url
 {
     NSString *dateString = nil;
 
@@ -96,9 +96,9 @@
 
                 dateString = [dateFormatter stringFromDate:date];
 
-                NSLog(@"CreationDate     : %@", creationDate);
-                NSLog(@"ModificationDate : %@", modificationDate);
-                NSLog(@"dateString       : %@", dateString);
+//                NSLog(@"CreationDate     : %@", creationDate);
+//                NSLog(@"ModificationDate : %@", modificationDate);
+//                NSLog(@"dateString       : %@", dateString);
                 
                 //            NSLog(@"%@", dic);
                 if (error) {
