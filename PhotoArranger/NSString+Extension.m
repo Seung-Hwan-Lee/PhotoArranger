@@ -27,4 +27,21 @@
     return fileNewName;
 }
 
+- (NSString *)stringByReplacingFileName:(NSString *)newFileName
+{
+    return [NSString stringWithFormat:@"%@.%@", newFileName, [self pathExtension]];
+    
+//    NSArray<NSString*> *fileComponents = [self componentsSeparatedByString:@"."];
+//    
+//    NSMutableString *fileNewName = [NSMutableString string];
+//    [fileNewName appendString:newFileName];
+//    [fileNewName appendString:@"."];
+//    
+//    if ([fileComponents firstObject] != [fileComponents lastObject]) {
+//        [fileNewName appendString:[fileComponents lastObject]];
+//    }
+//    
+//    return fileNewName;
+}
+
 @end

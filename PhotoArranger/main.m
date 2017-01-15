@@ -17,6 +17,7 @@ void startWork(int argc, const char * argv[]);
 
 void moveMediaFiles(NSString *srcDirectory, NSString *dstDirectory);
 void moveFileWhichHasPrefix(NSString * prefix, NSString * srcDirectory, NSString * dstDirectory);
+void adjustFileDate(NSString *srcDirectory);
 
 void processDirectory(NSString *srcDirectory, NSString *dstDirectory);
 
@@ -24,7 +25,8 @@ void processDuplicatedFiles(NSString *directory);
 void removeFaceTile(NSString *directory);
 void removeTooSmallImages(NSString *directory);
 void arrangeFileExtension(NSString *directory);
-void logCommandLineArguments(int argc, const char * argv[]);
+void renameMovieFileNameToDate(NSURL * fileURL);
+
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
@@ -72,6 +74,19 @@ void startWork(int argc, const char * argv[])
         NSString * dstDirectory = [NSString stringWithCString:argv[3] encoding:NSUTF8StringEncoding];
         
         moveMediaFiles(srcDirectory, dstDirectory);
+        
+        return ;
+    }
+    else if ([command isEqualToString:@"adjustFileDate"]) {
+        if (argc != 3) {
+            logCommandLineArguments(argc, argv);
+            NSLog(@"PhotoArranger adjustFileDate [src_dir]");
+            exit(1);
+        }
+        
+        NSString * srcDirectory = [NSString stringWithCString:argv[2] encoding:NSUTF8StringEncoding];
+        
+        adjustFileDate(srcDirectory);
         
         return ;
     }
@@ -489,6 +504,47 @@ void moveMediaFiles(NSString *srcDirectory, NSString *dstDirectory)
     }
 }
 
+void adjustFileDate(NSString *srcDirectory)
+{
+    NSURL *srcDirectoryURL = [NSURL fileURLWithPath:srcDirectory];
+    
+    NSFileManager *localFileManager= [[NSFileManager alloc] init];
+    
+    NSDirectoryEnumerator *enumerator = directoryEnumerator(srcDirectoryURL);
+    
+    for (NSURL *fileURL in enumerator) {
+        
+        @autoreleasepool {
+            
+            if ([fileURL isDirectoryFileURL]) {
+                NSLog(@".");
+                continue ;
+            }
+            
+            NSString * fileName = [fileURL lastPathComponent];
+            NSLog(@"%@", fileName);
+            
+            NSError *error = nil;
+            
+            NSString * dateString = nil;
+            
+            if ([NSImage adjustDate:fileURL]) {
+                NSLog(@".");
+                continue ;
+            }
+
+            NSString * pathExtension = [[fileURL pathExtension] uppercaseString];
+            
+            if (![@[@"MP4", @"MOV", @"AVI", @"MPG"] containsObject:pathExtension]) {
+                NSLog(@".");
+                continue;
+            }
+            
+            renameMovieFileNameToDate(fileURL);
+        }
+    }
+}
+
 void moveFileWhichHasPrefix(NSString * prefix, NSString * srcDirectory, NSString * dstDirectory)
 {
     NSURL * srcDirectoryURL = [NSURL fileURLWithPath:srcDirectory];
@@ -568,3 +624,99 @@ void moveFileWhichHasPrefix(NSString * prefix, NSString * srcDirectory, NSString
     }
 }
 
+void renameMovieFileNameToDate(NSURL * fileURL)
+{
+    NSFileManager * fileManager = [NSFileManager defaultManager];
+    
+    NSString * filePath = [NSString stringWithCString:[fileURL fileSystemRepresentation] encoding:NSUTF8StringEncoding];
+    
+    NSError * error = nil;
+
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    dateFormatter.dateFormat = @"yyyy:MM:dd HH:mm:ss";
+
+    NSMutableArray * dateList = [NSMutableArray array];
+    
+
+    
+    NSDictionary<NSFileAttributeKey,id> *fileAttributes =
+    [fileManager attributesOfItemAtPath:filePath error:&error];
+    
+    NSDate *creationDate = [fileAttributes objectForKey:NSFileCreationDate];
+    NSDate *modificationDate = [fileAttributes objectForKey:NSFileModificationDate];
+    //    NSDate *fileDate = nil;
+    
+    NSLog(@"create : %@ , modify : %@",
+          [dateFormatter stringFromDate:creationDate], [dateFormatter stringFromDate:modificationDate]);
+    
+    if (creationDate) {
+        [dateList addObject:creationDate];
+    }
+    if (modificationDate) {
+        [dateList addObject:modificationDate];
+    }
+    
+    NSDate *date = [[dateList sortedArrayUsingSelector:@selector(compare:)] firstObject];
+    
+    NSLog(@"oldest date : %@", [dateFormatter stringFromDate:date]);
+    
+    NSMutableDictionary<NSFileAttributeKey,id> * newFileAttributes = [fileAttributes mutableCopy];
+    newFileAttributes[NSFileCreationDate] = date;
+    newFileAttributes[NSFileModificationDate] = date;
+    
+    error = nil;
+    if (![fileManager setAttributes:newFileAttributes ofItemAtPath:filePath error:&error]) {
+        NSLog(@"Failed update file attributes , %@", error);
+        exit(1);
+    }
+    
+    // check
+    //    {
+    //        NSDictionary<NSFileAttributeKey,id> *fileAttributes =
+    //        [fileManager attributesOfItemAtPath:filePath error:&error];
+    //
+    //        NSDate *creationDate = [fileAttributes objectForKey:NSFileCreationDate];
+    //        NSDate *modificationDate = [fileAttributes objectForKey:NSFileModificationDate];
+    //
+    //        NSLog(@"updated creationDate : %@ , modificationDate : %@", creationDate, modificationDate);
+    //    }
+    
+    
+    NSDateFormatter *newFileNameFormatter = [[NSDateFormatter alloc] init];
+    newFileNameFormatter.dateFormat = @"yyyyMMdd_HHmmss";
+    
+    NSString * fileName = [fileURL lastPathComponent];
+    NSString * fileExt = [fileName pathExtension];
+    
+    NSString * newFileName = [[newFileNameFormatter stringFromDate:date] stringByAppendingPathExtension:fileExt];
+    
+    if ([fileName isEqualToString:newFileName]) {
+        NSLog(@"already processed");
+        return ;
+    }
+    
+    fileName = [fileName stringByReplacingFileName:[newFileNameFormatter stringFromDate:date]];
+    
+    NSURL * dstFileURL = [[fileURL URLByDeletingLastPathComponent] URLByAppendingPathComponent:fileName];
+    
+    
+    if ([fileManager fileExistsAtPath:[NSString stringWithCString:[dstFileURL fileSystemRepresentation]
+                                                         encoding:NSUTF8StringEncoding]]) {
+        NSLog(@"exist!");
+        
+        NSString *fileNewName = [fileName stringByInsertingPostfixInFileName:[[NSUUID UUID] UUIDString]];
+        
+        dstFileURL = [[fileURL URLByDeletingLastPathComponent] URLByAppendingPathComponent:fileNewName];
+    }
+    
+    NSLog(@"%@ -> %@", fileURL, dstFileURL);
+    
+    error = nil;
+    if (![fileManager moveItemAtURL:fileURL toURL:dstFileURL error:&error]) {
+        NSLog(@"Failed update file attributes , %@", error);
+        exit(1);
+    }
+    
+    NSLog(@"\n");
+    
+}

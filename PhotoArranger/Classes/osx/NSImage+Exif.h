@@ -16,6 +16,8 @@
 
 + (NSString *)dateFromImageURL:(NSURL *)url;
 
++ (BOOL)adjustDate:(NSURL *)url;
+
 + (BOOL)isTooSmallImageOfImageURL:(NSURL *)url;
 
 @end

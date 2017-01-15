@@ -11,5 +11,6 @@
 @interface NSString (Extension)
 
 - (NSString *)stringByInsertingPostfixInFileName:(NSString *)postfix;
+- (NSString *)stringByReplacingFileName:(NSString *)newFileName;
 
 @end
