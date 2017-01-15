@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		4FD89EA81E1689B9003F5D5C /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FD89EA71E1689B9003F5D5C /* main.m */; };
+		4FD89EB71E168A07003F5D5C /* ExifContainer.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FD89EB01E168A07003F5D5C /* ExifContainer.m */; };
+		4FD89EB91E168A07003F5D5C /* NSImage+Exif.m in Sources */ = {isa = PBXBuildFile; fileRef = 4FD89EB61E168A07003F5D5C /* NSImage+Exif.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +27,10 @@
 /* Begin PBXFileReference section */
 		4FD89EA41E1689B9003F5D5C /* PhotoArranger */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = PhotoArranger; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FD89EA71E1689B9003F5D5C /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		4FD89EAF1E168A07003F5D5C /* ExifContainer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ExifContainer.h; sourceTree = "<group>"; };
+		4FD89EB01E168A07003F5D5C /* ExifContainer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ExifContainer.m; sourceTree = "<group>"; };
+		4FD89EB51E168A07003F5D5C /* NSImage+Exif.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSImage+Exif.h"; sourceTree = "<group>"; };
+		4FD89EB61E168A07003F5D5C /* NSImage+Exif.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSImage+Exif.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,9 +63,29 @@
 		4FD89EA61E1689B9003F5D5C /* PhotoArranger */ = {
 			isa = PBXGroup;
 			children = (
+				4FD89EAE1E168A07003F5D5C /* Classes */,
 				4FD89EA71E1689B9003F5D5C /* main.m */,
 			);
 			path = PhotoArranger;
+			sourceTree = "<group>";
+		};
+		4FD89EAE1E168A07003F5D5C /* Classes */ = {
+			isa = PBXGroup;
+			children = (
+				4FD89EAF1E168A07003F5D5C /* ExifContainer.h */,
+				4FD89EB01E168A07003F5D5C /* ExifContainer.m */,
+				4FD89EB41E168A07003F5D5C /* osx */,
+			);
+			path = Classes;
+			sourceTree = "<group>";
+		};
+		4FD89EB41E168A07003F5D5C /* osx */ = {
+			isa = PBXGroup;
+			children = (
+				4FD89EB51E168A07003F5D5C /* NSImage+Exif.h */,
+				4FD89EB61E168A07003F5D5C /* NSImage+Exif.m */,
+			);
+			path = osx;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -120,7 +146,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FD89EB91E168A07003F5D5C /* NSImage+Exif.m in Sources */,
 				4FD89EA81E1689B9003F5D5C /* main.m in Sources */,
+				4FD89EB71E168A07003F5D5C /* ExifContainer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
