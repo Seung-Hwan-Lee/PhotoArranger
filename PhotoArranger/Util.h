@@ -14,5 +14,6 @@
 
 NSDirectoryEnumerator * directoryEnumerator(NSURL * srcDirectoryURL);
 NSString * dateFromFileURL(NSURL * fileURL);
+unsigned long long fileSizeFromFileURL(NSURL * fileURL);
 
 void logCommandLineArguments(int argc, const char * argv[]);

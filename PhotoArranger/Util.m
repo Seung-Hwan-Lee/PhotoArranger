@@ -63,14 +63,33 @@ NSString * dateFromFileURL(NSURL * fileURL)
     return dateString;
 }
 
+unsigned long long fileSizeFromFileURL(NSURL * fileURL)
+{
+    NSString *path = [NSString stringWithCString:[fileURL fileSystemRepresentation] encoding:NSUTF8StringEncoding];
+    
+    if (![[NSFileManager defaultManager] fileExistsAtPath:path]) {
+        return 0;
+    }
+    
+    NSError * error = nil;
+    NSDictionary *dic = [[NSFileManager defaultManager] attributesOfItemAtPath:path error:&error];
+    if (dic == nil || error != nil) {
+        NSLog(@"failed to get file attributed\n%@", error);
+        exit(1);
+    }
+    
+    return [[dic objectForKey:NSFileSize] unsignedLongLongValue];
+}
+
 void logCommandLineArguments(int argc, const char * argv[])
 {
     NSMutableString * mutableString = [[NSMutableString alloc] init];
     for (int i = 0 ; i < argc ; i++) {
         [mutableString appendString:
-        [NSString stringWithCString:argv[i] encoding:NSUTF8StringEncoding]];
+         [NSString stringWithCString:argv[i] encoding:NSUTF8StringEncoding]];
         [mutableString appendString:@" "];
     }
     
     NSLog(@"%@", mutableString);
 }
+

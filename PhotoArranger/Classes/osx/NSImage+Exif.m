@@ -58,7 +58,7 @@
         NSDictionary *exif = [props objectForKey:(NSString *)kCGImagePropertyExifDictionary];
         NSString *dateTimeString = [exif objectForKey:(NSString *)kCGImagePropertyExifDateTimeOriginal];
 
-        if ([dateTimeString length]) {
+        if ([dateTimeString length] && ![dateTimeString hasPrefix:@"0000:"]) {
 
             dateTimeString = [dateTimeString stringByReplacingOccurrencesOfString:@":" withString:@""];
             dateString = [[dateTimeString componentsSeparatedByString:@" "] firstObject];
