@@ -11,6 +11,7 @@
 #import "ExifContainer.h"
 #import "NSURL+Extension.h"
 #import "NSString+Extension.h"
+#import "Util.h"
 
 
 @implementation NSImage (Exif)
@@ -47,8 +48,87 @@
     
 }
 
-+ (NSString *)dateFromImageURL:(NSURL *)url
++ (NSString *)dateFromImageURL:(NSURL *)fileURL
 {
+    NSFileManager * fileManager = [NSFileManager defaultManager];
+    
+    NSString *filePath = [NSString stringWithCString:[fileURL fileSystemRepresentation] encoding:NSUTF8StringEncoding];
+    
+    
+    // create an imagesourceref
+    CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)fileURL, nil);
+    
+    NSDictionary *props = (__bridge NSDictionary *)CGImageSourceCopyPropertiesAtIndex(source, 0, NULL);
+    
+    if (![props count]) {
+        if (source) {
+            CFRelease(source);
+        }
+        return nil;
+    }
+    
+    NSInteger pixelWidth = [[props objectForKey:(NSString *)kCGImagePropertyPixelWidth] integerValue];
+    NSInteger pixelHeight = [[props objectForKey:(NSString *)kCGImagePropertyPixelHeight] integerValue];
+    
+    if (pixelWidth <= 0 || pixelHeight <= 0) {
+        if (source) {
+            CFRelease(source);
+        }
+        return nil;
+    }
+    
+    
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    dateFormatter.dateFormat = @"yyyy:MM:dd HH:mm:ss";
+    
+    
+    NSMutableArray * dateList = [NSMutableArray array];
+    NSError *error = nil;
+    
+    
+    NSDictionary *exif = [props objectForKey:(NSString *)kCGImagePropertyExifDictionary];
+    
+    
+    NSString *exifDateTimeOriginalString = [exif objectForKey:(NSString *)kCGImagePropertyExifDateTimeOriginal];
+    NSString *exifDateTimeDigitizedString = [exif objectForKey:(NSString *)kCGImagePropertyExifDateTimeDigitized];
+    
+    NSLog(@"origin : %@ , digiti : %@", exifDateTimeOriginalString, exifDateTimeDigitizedString);
+    
+    NSDate *exifDateTimeOriginal = [dateFormatter dateFromString:exifDateTimeOriginalString];
+    NSDate *exifDateTimeDigitized = [dateFormatter dateFromString:exifDateTimeDigitizedString];
+    
+    
+    
+    if (exifDateTimeOriginal) {
+        [dateList addObject:exifDateTimeOriginal];
+    }
+    if (exifDateTimeDigitized) {
+        [dateList addObject:exifDateTimeDigitized];
+    }
+    
+    
+    NSDictionary<NSFileAttributeKey,id> *fileAttributes =
+    [fileManager attributesOfItemAtPath:filePath error:&error];
+    
+    NSDate *creationDate = [fileAttributes objectForKey:NSFileCreationDate];
+    NSDate *modificationDate = [fileAttributes objectForKey:NSFileModificationDate];
+    //    NSDate *fileDate = nil;
+    
+    NSLog(@"create : %@ , modify : %@",
+          [dateFormatter stringFromDate:creationDate], [dateFormatter stringFromDate:modificationDate]);
+    
+    if (creationDate) {
+        [dateList addObject:creationDate];
+    }
+    if (modificationDate) {
+        [dateList addObject:modificationDate];
+    }
+    
+    NSDate *date = [[dateList sortedArrayUsingSelector:@selector(compare:)] firstObject];
+    
+//    NSLog(@"oldest date : %@", [dateFormatter stringFromDate:date]);
+    
+/*
     NSString *dateString = nil;
 
     // create an imagesourceref
@@ -95,7 +175,7 @@
                 }
 
                 NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-                dateFormatter.dateFormat = @"yyyyMMdd";
+                dateFormatter.dateFormat = @"yyyyMMdd_HHmmss";
 
                 dateString = [dateFormatter stringFromDate:date];
 
@@ -115,10 +195,14 @@
             }
         }
     }
-
+*/
     CFRelease(source);
+    
+    NSDateFormatter *newFileNameFormatter = [[NSDateFormatter alloc] init];
+    newFileNameFormatter.dateFormat = @"yyyyMMdd_HHmmss";
 
-    return dateString;
+
+    return [newFileNameFormatter stringFromDate:date];
 }
 
 + (BOOL)adjustDate:(NSURL *)fileURL
@@ -163,10 +247,10 @@
     NSString *exifDateTimeOriginalString = [exif objectForKey:(NSString *)kCGImagePropertyExifDateTimeOriginal];
     NSString *exifDateTimeDigitizedString = [exif objectForKey:(NSString *)kCGImagePropertyExifDateTimeDigitized];
     
+    NSLog(@"origin : %@ , digiti : %@", exifDateTimeOriginalString, exifDateTimeDigitizedString);
+    
     NSDate *exifDateTimeOriginal = [dateFormatter dateFromString:exifDateTimeOriginalString];
     NSDate *exifDateTimeDigitized = [dateFormatter dateFromString:exifDateTimeDigitizedString];
-    
-    NSLog(@"origin : %@ , digiti : %@", exifDateTimeOriginal, exifDateTimeDigitized);
     
     if (exifDateTimeOriginal) {
         [dateList addObject:exifDateTimeOriginal];
@@ -232,18 +316,29 @@
         return NO;
     }
     
-    fileName = [fileName stringByReplacingFileName:[newFileNameFormatter stringFromDate:date]];
-    
-    NSURL * dstFileURL = [[fileURL URLByDeletingLastPathComponent] URLByAppendingPathComponent:fileName];
     
     
-    if ([fileManager fileExistsAtPath:[NSString stringWithCString:[dstFileURL fileSystemRepresentation]
-                                                         encoding:NSUTF8StringEncoding]]) {
+    NSURL * dstFileURL = [[fileURL URLByDeletingLastPathComponent] URLByAppendingPathComponent:newFileName];
+    NSString * dstFilePath = [NSString stringWithCString:[dstFileURL fileSystemRepresentation] encoding:NSUTF8StringEncoding];
+    
+    
+    if ([fileManager fileExistsAtPath:dstFilePath]) {
         NSLog(@"exist!");
         
-        NSString *fileNewName = [fileName stringByInsertingPostfixInFileName:[[NSUUID UUID] UUIDString]];
+        if (isSameSizeFile(filePath, dstFilePath)) {
+            NSLog(@"same file exist!");
+            error = nil;
+            if (![fileManager removeItemAtURL:fileURL error:&error]) {
+                NSLog(@"failed to remove , %@", error);
+                exit(1);
+            }
+            CFRelease(source);
+            return YES;
+        }
         
-        dstFileURL = [[fileURL URLByDeletingLastPathComponent] URLByAppendingPathComponent:fileNewName];
+        newFileName = [newFileName stringByInsertingPostfixInFileName:[[NSUUID UUID] UUIDString]];
+        
+        dstFileURL = [[fileURL URLByDeletingLastPathComponent] URLByAppendingPathComponent:newFileName];
     }
     
     NSLog(@"%@ -> %@", fileURL, dstFileURL);

@@ -52,7 +52,7 @@ NSString * dateFromFileURL(NSURL * fileURL)
     }
     
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
-    dateFormatter.dateFormat = @"yyyyMMdd";
+    dateFormatter.dateFormat = @"yyyyMMdd_HHmmss";
     
     NSString * dateString = [dateFormatter stringFromDate:date];
     
@@ -93,3 +93,28 @@ void logCommandLineArguments(int argc, const char * argv[])
     NSLog(@"%@", mutableString);
 }
 
+
+BOOL isSameSizeFile(NSString * filePath1, NSString * filePath2)
+{
+    NSFileManager * fileManager = [NSFileManager defaultManager];
+    
+    NSError * error = nil;
+    
+    unsigned long long orgFileSize = [[fileManager attributesOfItemAtPath:filePath1 error:&error] fileSize];
+    if (error != nil) {
+        NSLog(@"Failed to get file attributes , error : %@", error);
+        exit(1);
+    }
+    
+    error = nil;
+    unsigned long long dstFileSize = [[fileManager attributesOfItemAtPath:filePath2 error:&error] fileSize];
+    if (error != nil) {
+        NSLog(@"Failed to get file attributes , error : %@", error);
+        exit(1);
+    }
+    
+    if (orgFileSize == dstFileSize) {
+        return YES;
+    }
+    return NO;
+}

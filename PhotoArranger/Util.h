@@ -17,3 +17,5 @@ NSString * dateFromFileURL(NSURL * fileURL);
 unsigned long long fileSizeFromFileURL(NSURL * fileURL);
 
 void logCommandLineArguments(int argc, const char * argv[]);
+
+BOOL isSameSizeFile(NSString * filePath1, NSString * filePath2);
