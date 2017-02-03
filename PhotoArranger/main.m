@@ -15,7 +15,7 @@
 
 void startWork(int argc, const char * argv[]);
 
-void moveMediaFiles(NSString *srcDirectory, NSString *dstDirectory);
+void moveMediaFiles(NSString *srcDirectory, NSString *dstDirectory, BOOL shouldDeleteAfterDone);
 void moveFileWhichHasPrefix(NSString * prefix, NSString * srcDirectory, NSString * dstDirectory);
 void adjustFileDate(NSString *srcDirectory);
 void adjustFileExtension(NSString *srcDirectory, NSString * dstDirectory);
@@ -74,7 +74,21 @@ void startWork(int argc, const char * argv[])
         NSString * srcDirectory = [NSString stringWithCString:argv[2] encoding:NSUTF8StringEncoding];
         NSString * dstDirectory = [NSString stringWithCString:argv[3] encoding:NSUTF8StringEncoding];
         
-        moveMediaFiles(srcDirectory, dstDirectory);
+        moveMediaFiles(srcDirectory, dstDirectory, YES);
+        
+        return ;
+    }
+    else if ([command isEqualToString:@"copyFilesAccordingToDate"]) {
+        if (argc != 4) {
+            logCommandLineArguments(argc, argv);
+            NSLog(@"PhotoArranger moveFilesAccordingToDate [src_dir] [dst_dir]");
+            exit(1);
+        }
+        
+        NSString * srcDirectory = [NSString stringWithCString:argv[2] encoding:NSUTF8StringEncoding];
+        NSString * dstDirectory = [NSString stringWithCString:argv[3] encoding:NSUTF8StringEncoding];
+        
+        moveMediaFiles(srcDirectory, dstDirectory, NO);
         
         return ;
     }
@@ -443,7 +457,7 @@ void processDirectory(NSString *srcDirectory, NSString *dstDirectory)
     }
 }
 
-void moveMediaFiles(NSString *srcDirectory, NSString *dstDirectory)
+void moveMediaFiles(NSString *srcDirectory, NSString *dstDirectory, BOOL shouldDeleteAfterDone)
 {
     NSURL *srcDirectoryURL = [NSURL fileURLWithPath:srcDirectory];
     
@@ -505,9 +519,11 @@ void moveMediaFiles(NSString *srcDirectory, NSString *dstDirectory)
                 if (isSameSizeFile(filePath, dstFile)) {
                     NSLog(@"same file exist!");
                     error = nil;
-                    if (![fileManager removeItemAtURL:fileURL error:&error]) {
-                        NSLog(@"failed to remove , %@", error);
-                        exit(1);
+                    if (shouldDeleteAfterDone) {
+                        if (![fileManager removeItemAtURL:fileURL error:&error]) {
+                            NSLog(@"failed to remove , %@", error);
+                            exit(1);
+                        }
                     }
                     continue;
                 }
@@ -525,9 +541,17 @@ void moveMediaFiles(NSString *srcDirectory, NSString *dstDirectory)
             
             NSLog(@"%@\n> %@", fileURL, dstFile);
             
-            if (![fileManager moveItemAtURL:fileURL toURL:dstFileURL error:&error]) {
-                NSLog(@"failed to move , %@", error);
-                exit(1);
+            if (shouldDeleteAfterDone) {
+                if (![fileManager moveItemAtURL:fileURL toURL:dstFileURL error:&error]) {
+                    NSLog(@"failed to move , %@", error);
+                    exit(1);
+                }
+            }
+            else {
+                if (![fileManager copyItemAtURL:fileURL toURL:dstFileURL error:&error]) {
+                    NSLog(@"failed to move , %@", error);
+                    exit(1);
+                }
             }
         }
     }
